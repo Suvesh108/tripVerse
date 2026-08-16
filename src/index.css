@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Space Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  /* Premium Industry-Level Palette */
+  --color-primary: #0F172A; /* Deep Slate Blue/Navy */
+  --color-primary-container: #1E293B;
+  --color-secondary: #0EA5E9; /* Sky Blue */
+  --color-secondary-container: #7DD3FC;
+  --color-tertiary: #6366F1; /* Indigo */
+  --color-accent: #F43F5E; /* Rose */
+  
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-on-surface: #0F172A;
+  --color-on-surface-variant: #64748B;
+  --color-outline: #E2E8F0;
+  --color-outline-variant: #F1F5F9;
+
+  /* Custom Shadows */
+  --shadow-premium: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+  --shadow-glass: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+@layer base {
+  body {
+    @apply bg-background font-body text-on-surface antialiased selection:bg-secondary/20;
+    user-select: none;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline tracking-tight;
+  }
+
+  input, textarea, [contenteditable="true"], .selectable {
+    user-select: text !important;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-glass;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white px-8 py-3 rounded-full font-bold transition-all hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/10;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-primary border border-outline px-8 py-3 rounded-full font-bold transition-all hover:bg-slate-50 hover:border-slate-300 active:scale-[0.98];
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-tertiary to-secondary;
+  }
+
+  .card-premium {
+    @apply bg-white rounded-[2rem] border border-outline-variant shadow-premium transition-all hover:shadow-2xl hover:shadow-primary/5 hover:border-outline;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+

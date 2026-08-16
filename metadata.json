@@ -1,0 +1,7 @@
+{
+  "name": "TripVerse",
+  "description": "A premium AI-powered travel planning and exploration platform with an editorial futurist aesthetic.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
