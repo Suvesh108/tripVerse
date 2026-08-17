@@ -13,26 +13,30 @@ export default function Home() {
   const [searchBudget, setSearchBudget] = useState('50000');
   const [searchDays, setSearchDays] = useState('0');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<Record<number, boolean>>({});
 
   const indiaPlaces = [
-    { name: 'Taj Mahal, Agra', url: 'https://images.unsplash.com/photo-1564507592333-c60657451dd7?auto=format&fit=crop&q=60&w=1920' },
-    { name: 'Hawa Mahal, Jaipur', url: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&q=60&w=1920' },
-    { name: 'Kerala Backwaters', url: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&q=60&w=1920' },
-    { name: 'Varanasi Ghats', url: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&q=60&w=1920' },
-    { name: 'Ladakh Mountains', url: 'https://images.unsplash.com/photo-1544085311-11a028465b03?auto=format&fit=crop&q=60&w=1920' },
-    { name: 'Goa Beaches', url: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&q=60&w=1920' }
+    { name: 'Taj Mahal, Agra', url: 'https://images.unsplash.com/photo-1564507592333-c60657451dd7?auto=format&fit=crop&q=75&w=1600' },
+    { name: 'Hawa Mahal, Jaipur', url: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&q=75&w=1600' },
+    { name: 'Kerala Backwaters', url: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&q=75&w=1600' },
+    { name: 'Varanasi Ghats', url: 'https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&q=75&w=1600' },
+    { name: 'Ladakh Mountains', url: 'https://images.unsplash.com/photo-1544085311-11a028465b03?auto=format&fit=crop&q=75&w=1600' },
+    { name: 'Goa Beaches', url: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&q=75&w=1600' }
   ];
 
+  // Preload all hero background images on initial load
   useEffect(() => {
-    // Preload the first few images
-    indiaPlaces.slice(0, 3).forEach(place => {
+    indiaPlaces.forEach((place, index) => {
       const img = new Image();
       img.src = place.url;
+      img.onload = () => {
+        setLoadedImages(prev => ({ ...prev, [index]: true }));
+      };
     });
 
     const timer = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % indiaPlaces.length);
-    }, 8000); // Increased interval for better UX
+    }, 7000);
     return () => clearInterval(timer);
   }, []);
 
@@ -67,24 +71,55 @@ export default function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden pt-20">
-        <div className="absolute inset-0 z-0">
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={currentImageIndex}
-              src={indiaPlaces[currentImageIndex].url}
-              alt={indiaPlaces[currentImageIndex].name}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.5 }}
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          </AnimatePresence>
-          <div className="absolute inset-0 bg-black/40"></div>
-          <div className="absolute bottom-10 right-10 text-white/60 text-xs font-medium tracking-widest uppercase hidden md:block">
-            {indiaPlaces[currentImageIndex].name}
+      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden pt-20 bg-slate-950">
+        {/* Seamless Stacked Background Crossfade */}
+        <div className="absolute inset-0 z-0 overflow-hidden bg-slate-900">
+          {indiaPlaces.map((place, idx) => {
+            const isActive = idx === currentImageIndex;
+            return (
+              <div
+                key={place.name}
+                className={cn(
+                  "absolute inset-0 transition-opacity duration-1000 ease-in-out will-change-transform",
+                  isActive ? "opacity-100 z-10" : "opacity-0 z-0"
+                )}
+              >
+                <img
+                  src={place.url}
+                  alt={place.name}
+                  loading={idx < 2 ? "eager" : "lazy"}
+                  decoding="async"
+                  className={cn(
+                    "w-full h-full object-cover transition-transform duration-[7000ms] ease-out",
+                    isActive ? "scale-105" : "scale-100"
+                  )}
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            );
+          })}
+          
+          {/* Overlay Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-black/40 to-black/30 z-20 pointer-events-none"></div>
+
+          {/* Place Label & Slide Indicators */}
+          <div className="absolute bottom-8 right-8 z-30 flex flex-col items-end gap-3 hidden md:flex">
+            <div className="text-white/80 text-xs font-semibold tracking-widest uppercase bg-black/30 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-lg">
+              📍 {indiaPlaces[currentImageIndex].name}
+            </div>
+            <div className="flex items-center gap-1.5">
+              {indiaPlaces.map((_, dotIdx) => (
+                <button
+                  key={dotIdx}
+                  onClick={() => setCurrentImageIndex(dotIdx)}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-500",
+                    dotIdx === currentImageIndex ? "w-6 bg-secondary" : "w-1.5 bg-white/40 hover:bg-white/70"
+                  )}
+                  aria-label={`Go to slide ${dotIdx + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
         
