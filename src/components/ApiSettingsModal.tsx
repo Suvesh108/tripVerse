@@ -138,12 +138,17 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
               </button>
             </div>
 
-            {/* Privacy Shield Notice */}
-            <div className="bg-emerald-50 border-b border-emerald-100 px-6 py-3.5 flex items-center gap-3 text-emerald-900 text-xs md:text-sm">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span>
-                <strong>100% Client-Side Privacy:</strong> Your keys are stored strictly in your browser's <code className="bg-emerald-100/70 px-1 py-0.5 rounded font-mono text-emerald-800">localStorage</code>. No backend server has access to or stores your credentials.
-              </span>
+            {/* Privacy & Key Requirement Shield Notice */}
+            <div className="bg-emerald-50/90 border-b border-emerald-100 px-6 py-3.5 flex items-start gap-3 text-emerald-900 text-xs md:text-sm">
+              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p>
+                  <strong>Only 3 API Keys Needed:</strong> TripVerse requires just <strong>3 API keys</strong> (Groq AI, Tavily Search, and ExchangeRate) to power all features. All other services (Maps, Weather, Wikipedia) are 100% free and public out-of-the-box.
+                </p>
+                <p className="text-[11px] text-emerald-700">
+                  🔐 <strong>100% Client-Side Privacy:</strong> All keys are saved strictly in your browser's <code className="bg-emerald-100 px-1 py-0.5 rounded font-mono text-emerald-800">localStorage</code> and never sent to any backend proxy or third party.
+                </p>
+              </div>
             </div>
 
             {/* Modal Body */}
@@ -339,6 +344,28 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
                     <span>{exchangeStatus.message}</span>
                   </div>
                 )}
+              </div>
+
+              {/* Built-in Public Services (Zero Configuration) */}
+              <div className="p-4 rounded-2xl bg-slate-100/70 border border-slate-200 text-xs text-slate-600 space-y-2">
+                <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Built-in Public APIs (Ready Out-of-the-Box, No Keys Needed):
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] pt-1">
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/80">
+                    <span className="font-semibold text-slate-700 block">🗺️ OpenStreetMap</span>
+                    <span className="text-emerald-600 font-medium">Free Map & POIs</span>
+                  </div>
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/80">
+                    <span className="font-semibold text-slate-700 block">🌤️ Open-Meteo</span>
+                    <span className="text-emerald-600 font-medium">Free Live Weather</span>
+                  </div>
+                  <div className="bg-white p-2 rounded-xl border border-slate-200/80">
+                    <span className="font-semibold text-slate-700 block">📖 Wikipedia API</span>
+                    <span className="text-emerald-600 font-medium">Free City Summaries</span>
+                  </div>
+                </div>
               </div>
             </div>
 
