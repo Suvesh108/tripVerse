@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Key, ShieldCheck, Eye, EyeOff, CheckCircle2, AlertCircle, 
-  ExternalLink, Trash2, RefreshCw, X, Sparkles, Globe, Coins, Lock 
+  ExternalLink, Trash2, RefreshCw, X, Sparkles, Globe, Coins, Lock, Check 
 } from 'lucide-react';
 import { 
   getStoredApiKeys, saveStoredApiKeys, clearStoredApiKeys, 
@@ -22,6 +22,7 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
     exchangeRateApiKey: '',
   });
 
+  const [activeTab, setActiveTab] = useState<'groq' | 'all'>('groq');
   const [showGroq, setShowGroq] = useState(false);
   const [showTavily, setShowTavily] = useState(false);
   const [showExchange, setShowExchange] = useState(false);
@@ -53,11 +54,11 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
     setTimeout(() => {
       setSavedSuccess(false);
       onClose();
-    }, 1200);
+    }, 1000);
   };
 
   const handleClear = () => {
-    if (confirm('Are you sure you want to remove all saved API keys from your browser?')) {
+    if (confirm('Remove saved API keys from this browser?')) {
       clearStoredApiKeys();
       setKeys({
         groqApiKey: '',
@@ -75,13 +76,6 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
     setGroqStatus(null);
     const result = await testGroqKey(keys.groqApiKey);
     setGroqStatus(result);
-    if (result.success && result.models) {
-      setKeys(prev => ({
-        ...prev,
-        availableGroqModels: result.models,
-        selectedGroqModel: result.selectedModel || prev.selectedGroqModel,
-      }));
-    }
     setTestingGroq(false);
   };
 
@@ -104,84 +98,97 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+          {/* Frosted Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-md"
           />
 
-          {/* Modal Container */}
+          {/* Centered Compact Modal Window */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            initial={{ opacity: 0, scale: 0.92, y: 15 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-10 my-8"
+            exit={{ opacity: 0, scale: 0.92, y: 15 }}
+            transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
+            className="relative w-full max-w-lg bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-800 overflow-hidden z-10 my-auto"
           >
-            {/* Modal Header */}
-            <div className="p-6 md:p-8 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="p-2 bg-primary/20 rounded-xl text-primary border border-primary/30">
-                    <Key className="w-5 h-5" />
-                  </span>
-                  <span className="text-xs uppercase tracking-widest text-primary font-bold">Client-Side BYOK Settings</span>
+            {/* Header */}
+            <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-800 flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-primary/20 text-primary rounded-2xl border border-primary/30 shrink-0">
+                  <Key className="w-5 h-5" />
                 </div>
-                <h2 className="text-2xl md:text-3xl font-headline font-bold">API Key Manager</h2>
-                <p className="text-slate-300 text-sm mt-1">
-                  Connect your personal API keys for unlimited AI itineraries, real-time web search, and currency rates.
-                </p>
+                <div>
+                  <h3 className="font-headline text-lg font-bold text-white leading-tight">Configure API Keys</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Connect your free Groq AI key for unlimited AI trip itineraries.
+                  </p>
+                </div>
               </div>
 
               <button
                 onClick={onClose}
-                className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors"
-                aria-label="Close modal"
+                className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Close"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Privacy & Key Requirement Shield Notice */}
-            <div className="bg-emerald-50/90 border-b border-emerald-100 px-6 py-3.5 flex items-start gap-3 text-emerald-900 text-xs md:text-sm">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <p>
-                  <strong>Only 3 API Keys Needed:</strong> TripVerse requires just <strong>3 API keys</strong> (Groq AI, Tavily Search, and ExchangeRate) to power all features. All other services (Maps, Weather, Wikipedia) are 100% free and public out-of-the-box.
-                </p>
-                <p className="text-[11px] text-emerald-700">
-                  🔐 <strong>100% Client-Side Privacy:</strong> All keys are saved strictly in your browser's <code className="bg-emerald-100 px-1 py-0.5 rounded font-mono text-emerald-800">localStorage</code> and never sent to any backend proxy or third party.
-                </p>
-              </div>
+            {/* Quick Tab Switcher */}
+            <div className="flex items-center px-6 pt-4 gap-2 border-b border-slate-800/80 bg-slate-950/40">
+              <button
+                onClick={() => setActiveTab('groq')}
+                className={cn(
+                  "pb-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5",
+                  activeTab === 'groq'
+                    ? "text-secondary border-secondary"
+                    : "text-slate-400 border-transparent hover:text-slate-200"
+                )}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Groq AI (Required)
+              </button>
+              <button
+                onClick={() => setActiveTab('all')}
+                className={cn(
+                  "pb-2.5 text-xs font-bold transition-all border-b-2 cursor-pointer flex items-center gap-1.5",
+                  activeTab === 'all'
+                    ? "text-sky-400 border-sky-400"
+                    : "text-slate-400 border-transparent hover:text-slate-200"
+                )}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                More Keys (Optional)
+              </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 md:p-8 space-y-6 max-h-[62vh] overflow-y-auto">
-              {/* 1. Groq AI Key */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <label className="flex items-center gap-2 font-bold text-slate-800 text-sm md:text-base">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    Groq Cloud API Key
-                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full uppercase">
-                      Recommended
+            <div className="p-5 sm:p-6 space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar">
+              
+              {/* Primary: Groq AI Key */}
+              <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-secondary" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">Groq AI API Key</span>
+                    <span className="text-[9px] font-black text-rose-400 bg-rose-950/60 px-2 py-0.2 rounded-full border border-rose-800/40">
+                      Required
                     </span>
-                  </label>
+                  </div>
                   <a
                     href="https://console.groq.com/keys"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold"
+                    className="text-[11px] font-bold text-secondary hover:underline flex items-center gap-1"
                   >
-                    Get Free Groq Key <ExternalLink className="w-3 h-3" />
+                    Get Free Key <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
-                <p className="text-xs text-slate-500">
-                  Powers the ultra-fast AI Travel Assistant, day-by-day itineraries, and destination history insights.
-                </p>
 
                 <div className="relative">
                   <input
@@ -192,22 +199,22 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
                       setGroqStatus(null);
                     }}
                     placeholder="gsk_..."
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 pr-20 text-sm font-mono focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    className="w-full bg-slate-900 text-white text-xs font-mono px-4 py-2.5 pr-20 rounded-xl border border-slate-700 focus:border-secondary focus:ring-1 focus:ring-secondary outline-none transition-all placeholder:text-slate-600"
+                    autoFocus={activeTab === 'groq'}
                   />
-                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => setShowGroq(!showGroq)}
-                      className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
-                      title={showGroq ? 'Hide Key' : 'Show Key'}
+                      className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
                     >
-                      {showGroq ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showGroq ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
                     <button
                       type="button"
                       onClick={handleTestGroq}
-                      disabled={testingGroq || !keys.groqApiKey.trim()}
-                      className="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-700 transition-colors flex items-center gap-1"
+                      disabled={testingGroq || !keys.groqApiKey?.trim()}
+                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold transition-all disabled:opacity-40 cursor-pointer flex items-center gap-1"
                     >
                       {testingGroq ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Test'}
                     </button>
@@ -216,228 +223,176 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
 
                 {groqStatus && (
                   <div className={cn(
-                    "text-xs px-3 py-2 rounded-lg flex items-center gap-2",
-                    groqStatus.success ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-rose-50 text-rose-800 border border-rose-200"
+                    "text-xs p-2.5 rounded-xl flex items-center gap-2 font-medium",
+                    groqStatus.success ? "bg-emerald-950/70 text-emerald-300 border border-emerald-800/60" : "bg-rose-950/70 text-rose-300 border border-rose-800/60"
                   )}>
-                    {groqStatus.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
-                    <span>{groqStatus.message}</span>
-                  </div>
-                )}
-
-                {/* Dynamic Model Selector */}
-                <div className="pt-2 border-t border-slate-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-                  <span className="text-slate-600 font-semibold flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-primary" />
-                    Active AI Model:
-                  </span>
-                  <select
-                    value={keys.selectedGroqModel || 'auto'}
-                    onChange={(e) => {
-                      const selected = e.target.value;
-                      setKeys({ ...keys, selectedGroqModel: selected });
-                      saveStoredApiKeys({ selectedGroqModel: selected });
-                    }}
-                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-medium outline-none focus:border-primary w-full sm:w-auto"
-                  >
-                    <option value="auto">✨ Auto-select best available model</option>
-                    {(keys.availableGroqModels && keys.availableGroqModels.length > 0 
-                      ? keys.availableGroqModels 
-                      : ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama-3.1-70b-versatile', 'llama3-70b-8192', 'llama3-8b-8192', 'gemma2-9b-it', 'mixtral-8x7b-32768']
-                    ).map((model) => (
-                      <option key={model} value={model}>
-                        {model} {model === 'llama-3.3-70b-versatile' ? '(Recommended)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* 2. Tavily Search Key */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <label className="flex items-center gap-2 font-bold text-slate-800 text-sm md:text-base">
-                    <Globe className="w-4 h-4 text-blue-500" />
-                    Tavily Web Search API Key
-                    <span className="text-[10px] bg-slate-200 text-slate-600 font-bold px-2 py-0.5 rounded-full uppercase">
-                      Optional
-                    </span>
-                  </label>
-                  <a
-                    href="https://tavily.com/"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold"
-                  >
-                    Get Free Tavily Key <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Enriches AI travel responses with real-time web search facts and local recommendations.
-                </p>
-
-                <div className="relative">
-                  <input
-                    type={showTavily ? 'text' : 'password'}
-                    value={keys.tavilyApiKey}
-                    onChange={(e) => {
-                      setKeys({ ...keys, tavilyApiKey: e.target.value });
-                      setTavilyStatus(null);
-                    }}
-                    placeholder="tvly-..."
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 pr-20 text-sm font-mono focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                  />
-                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setShowTavily(!showTavily)}
-                      className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
-                    >
-                      {showTavily ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleTestTavily}
-                      disabled={testingTavily || !keys.tavilyApiKey.trim()}
-                      className="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-700 transition-colors flex items-center gap-1"
-                    >
-                      {testingTavily ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Test'}
-                    </button>
-                  </div>
-                </div>
-
-                {tavilyStatus && (
-                  <div className={cn(
-                    "text-xs px-3 py-2 rounded-lg flex items-center gap-2",
-                    tavilyStatus.success ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-rose-50 text-rose-800 border border-rose-200"
-                  )}>
-                    {tavilyStatus.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
-                    <span>{tavilyStatus.message}</span>
+                    {groqStatus.success ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+                    <span className="line-clamp-2">{groqStatus.message}</span>
                   </div>
                 )}
               </div>
 
-              {/* 3. ExchangeRate API Key */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <label className="flex items-center gap-2 font-bold text-slate-800 text-sm md:text-base">
-                    <Coins className="w-4 h-4 text-amber-500" />
-                    ExchangeRate-API Key
-                    <span className="text-[10px] bg-slate-200 text-slate-600 font-bold px-2 py-0.5 rounded-full uppercase">
-                      Optional
-                    </span>
-                  </label>
-                  <a
-                    href="https://www.exchangerate-api.com/"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-amber-600 hover:underline flex items-center gap-1 font-semibold"
-                  >
-                    Get Free Key <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Real-time foreign currency conversions. (TripVerse automatically uses public rate fallbacks if empty).
-                </p>
+              {/* Optional Keys (Shown on 'all' tab) */}
+              {activeTab === 'all' && (
+                <>
+                  {/* Tavily Web Search Key */}
+                  <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-sky-400" />
+                        <span className="text-xs font-bold text-white uppercase tracking-wider">Tavily Web Search Key</span>
+                        <span className="text-[9px] font-bold text-slate-400 bg-slate-800 px-2 py-0.2 rounded-full">
+                          Optional
+                        </span>
+                      </div>
+                      <a
+                        href="https://tavily.com/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-bold text-sky-400 hover:underline flex items-center gap-1"
+                      >
+                        Get Free Key <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
 
-                <div className="relative">
-                  <input
-                    type={showExchange ? 'text' : 'password'}
-                    value={keys.exchangeRateApiKey}
-                    onChange={(e) => {
-                      setKeys({ ...keys, exchangeRateApiKey: e.target.value });
-                      setExchangeStatus(null);
-                    }}
-                    placeholder="ExchangeRate API Key..."
-                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 pr-20 text-sm font-mono focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
-                  />
-                  <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setShowExchange(!showExchange)}
-                      className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
-                    >
-                      {showExchange ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleTestExchange}
-                      disabled={testingExchange || !keys.exchangeRateApiKey.trim()}
-                      className="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-200 hover:bg-slate-300 disabled:opacity-50 text-slate-700 transition-colors flex items-center gap-1"
-                    >
-                      {testingExchange ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Test'}
-                    </button>
-                  </div>
-                </div>
+                    <div className="relative">
+                      <input
+                        type={showTavily ? 'text' : 'password'}
+                        value={keys.tavilyApiKey}
+                        onChange={(e) => {
+                          setKeys({ ...keys, tavilyApiKey: e.target.value });
+                          setTavilyStatus(null);
+                        }}
+                        placeholder="tvly-..."
+                        className="w-full bg-slate-900 text-white text-xs font-mono px-4 py-2.5 pr-20 rounded-xl border border-slate-700 focus:border-sky-400 focus:ring-1 focus:ring-sky-400 outline-none transition-all placeholder:text-slate-600"
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowTavily(!showTavily)}
+                          className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+                        >
+                          {showTavily ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleTestTavily}
+                          disabled={testingTavily || !keys.tavilyApiKey?.trim()}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold transition-all disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                        >
+                          {testingTavily ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Test'}
+                        </button>
+                      </div>
+                    </div>
 
-                {exchangeStatus && (
-                  <div className={cn(
-                    "text-xs px-3 py-2 rounded-lg flex items-center gap-2",
-                    exchangeStatus.success ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-rose-50 text-rose-800 border border-rose-200"
-                  )}>
-                    {exchangeStatus.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
-                    <span>{exchangeStatus.message}</span>
+                    {tavilyStatus && (
+                      <div className={cn(
+                        "text-xs p-2.5 rounded-xl flex items-center gap-2 font-medium",
+                        tavilyStatus.success ? "bg-emerald-950/70 text-emerald-300 border border-emerald-800/60" : "bg-rose-950/70 text-rose-300 border border-rose-800/60"
+                      )}>
+                        {tavilyStatus.success ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+                        <span>{tavilyStatus.message}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Built-in Public Services (Zero Configuration) */}
-              <div className="p-4 rounded-2xl bg-slate-100/70 border border-slate-200 text-xs text-slate-600 space-y-2">
-                <p className="font-bold text-slate-800 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Built-in Public APIs (Ready Out-of-the-Box, No Keys Needed):
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] pt-1">
-                  <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                    <span className="font-semibold text-slate-700 block">🗺️ OpenStreetMap</span>
-                    <span className="text-emerald-600 font-medium">Free Map & POIs</span>
+                  {/* ExchangeRate Key */}
+                  <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Coins className="w-4 h-4 text-amber-400" />
+                        <span className="text-xs font-bold text-white uppercase tracking-wider">ExchangeRate Key</span>
+                        <span className="text-[9px] font-bold text-slate-400 bg-slate-800 px-2 py-0.2 rounded-full">
+                          Optional
+                        </span>
+                      </div>
+                      <a
+                        href="https://www.exchangerate-api.com/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1"
+                      >
+                        Get Free Key <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type={showExchange ? 'text' : 'password'}
+                        value={keys.exchangeRateApiKey}
+                        onChange={(e) => {
+                          setKeys({ ...keys, exchangeRateApiKey: e.target.value });
+                          setExchangeStatus(null);
+                        }}
+                        placeholder="ExchangeRate API Key..."
+                        className="w-full bg-slate-900 text-white text-xs font-mono px-4 py-2.5 pr-20 rounded-xl border border-slate-700 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none transition-all placeholder:text-slate-600"
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowExchange(!showExchange)}
+                          className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+                        >
+                          {showExchange ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleTestExchange}
+                          disabled={testingExchange || !keys.exchangeRateApiKey?.trim()}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[10px] font-bold transition-all disabled:opacity-40 cursor-pointer flex items-center gap-1"
+                        >
+                          {testingExchange ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Test'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {exchangeStatus && (
+                      <div className={cn(
+                        "text-xs p-2.5 rounded-xl flex items-center gap-2 font-medium",
+                        exchangeStatus.success ? "bg-emerald-950/70 text-emerald-300 border border-emerald-800/60" : "bg-rose-950/70 text-rose-300 border border-rose-800/60"
+                      )}>
+                        {exchangeStatus.success ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+                        <span>{exchangeStatus.message}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                    <span className="font-semibold text-slate-700 block">🌤️ Open-Meteo</span>
-                    <span className="text-emerald-600 font-medium">Free Live Weather</span>
-                  </div>
-                  <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                    <span className="font-semibold text-slate-700 block">📖 Wikipedia API</span>
-                    <span className="text-emerald-600 font-medium">Free City Summaries</span>
-                  </div>
-                </div>
+                </>
+              )}
+
+              {/* Privacy Notice */}
+              <div className="p-3 bg-emerald-950/50 rounded-xl border border-emerald-800/40 text-[11px] text-emerald-300 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>100% Client-Side: Saved only in your browser storage. Never sent to any server.</span>
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-6 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between flex-wrap gap-4">
+            {/* Footer Actions */}
+            <div className="p-4 sm:p-5 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={handleClear}
-                className="px-4 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition-colors flex items-center gap-2"
+                className="px-3 py-2 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Clear saved keys"
               >
-                <Trash2 className="w-4 h-4" />
-                Clear All Keys
+                <Trash2 className="w-3.5 h-3.5" />
+                Clear
               </button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors"
+                  className="px-4 py-2 text-slate-400 hover:text-white rounded-full text-xs font-bold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                  className="px-6 py-2.5 bg-secondary text-slate-950 hover:bg-secondary/90 rounded-full font-black text-xs uppercase tracking-wider shadow-lg transition-all flex items-center gap-2 cursor-pointer"
                 >
-                  {savedSuccess ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      Saved Locally!
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4" />
-                      Save Keys to Browser
-                    </>
-                  )}
+                  {savedSuccess ? <Check className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                  {savedSuccess ? 'Saved!' : 'Save Keys'}
                 </button>
               </div>
             </div>
