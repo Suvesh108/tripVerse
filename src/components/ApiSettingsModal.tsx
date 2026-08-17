@@ -75,6 +75,13 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
     setGroqStatus(null);
     const result = await testGroqKey(keys.groqApiKey);
     setGroqStatus(result);
+    if (result.success && result.models) {
+      setKeys(prev => ({
+        ...prev,
+        availableGroqModels: result.models,
+        selectedGroqModel: result.selectedModel || prev.selectedGroqModel,
+      }));
+    }
     setTestingGroq(false);
   };
 
@@ -216,6 +223,33 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
                     <span>{groqStatus.message}</span>
                   </div>
                 )}
+
+                {/* Dynamic Model Selector */}
+                <div className="pt-2 border-t border-slate-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                  <span className="text-slate-600 font-semibold flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    Active AI Model:
+                  </span>
+                  <select
+                    value={keys.selectedGroqModel || 'auto'}
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      setKeys({ ...keys, selectedGroqModel: selected });
+                      saveStoredApiKeys({ selectedGroqModel: selected });
+                    }}
+                    className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-700 font-medium outline-none focus:border-primary w-full sm:w-auto"
+                  >
+                    <option value="auto">✨ Auto-select best available model</option>
+                    {(keys.availableGroqModels && keys.availableGroqModels.length > 0 
+                      ? keys.availableGroqModels 
+                      : ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama-3.1-70b-versatile', 'llama3-70b-8192', 'llama3-8b-8192', 'gemma2-9b-it', 'mixtral-8x7b-32768']
+                    ).map((model) => (
+                      <option key={model} value={model}>
+                        {model} {model === 'llama-3.3-70b-versatile' ? '(Recommended)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* 2. Tavily Search Key */}

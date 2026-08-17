@@ -44,12 +44,10 @@ export default function Assistant() {
   const handlePlanFromChat = async (userMessage: string) => {
     const dest = extractDestination(userMessage);
     if (!dest) return;
-    const budgetMatch = userMessage.match(/(₹|Rs\.?|INR)\s*([\d,]+)/i);
-    const budget = budgetMatch ? parseInt(budgetMatch[2].replace(/,/g, '')) : 50000;
     const today = new Date().toISOString().split('T')[0];
     const endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    await actions.createTrip(`${dest} Adventure`, dest, today, endDate, budget);
-    navigate(`/planner?destination=${encodeURIComponent(dest)}&budget=${budget}&autoplan=true`);
+    await actions.createTrip(`${dest} Adventure`, dest, today, endDate, 0);
+    navigate(`/planner?destination=${encodeURIComponent(dest)}&autoplan=true`);
   };
 
   const scrollToBottom = () => {
@@ -61,19 +59,24 @@ export default function Assistant() {
   }, [state.chatMessages]);
 
   const handleSendMessage = async () => {
-    if (message.trim() && !state.isLoading) {
-      const userMessage = message.trim();
-      setMessage('');
-      setIsTyping(true);
+    const userMessage = message.trim();
+    if (!userMessage || userMessage.length < 2 || isTyping || state.isLoading) {
+      return;
+    }
 
-      // Fetch web results in parallel if Tavily configured
+    setMessage('');
+    setIsTyping(true);
+
+    // Only fetch live web context for informational travel queries (avoids unnecessary search API calls)
+    const isInformationalQuery = userMessage.length > 8 && !/^(hi|hello|hey|help|thanks|thank you)\b/i.test(userMessage);
+    if (isInformationalQuery) {
       actions.searchWeb(userMessage).then(results => {
         setWebResults(results);
       }).catch(() => {});
-      
-      await actions.sendChatMessage(userMessage);
-      setIsTyping(false);
     }
+    
+    await actions.sendChatMessage(userMessage);
+    setIsTyping(false);
   };
 
   const handleKeyPress = (e: KeyboardEvent) => {
@@ -86,7 +89,7 @@ export default function Assistant() {
   const promptIdeas = [
     { title: "Romantic Getaway", text: "Plan a romantic 3-day getaway in Paris with a focus on art galleries." },
     { title: "Hidden Gems", text: "What are the best hidden gems for surfing in Portugal?" },
-    { title: "Japan Explorer", text: "Create a 7-day itinerary for Japan with a budget of ₹2,50,000" },
+    { title: "Japan Explorer", text: "Create a 7-day itinerary for Japan with scenic shrines and local cuisine" },
     { title: "Family Fun", text: "Show me family-friendly destinations in Europe for summer" }
   ];
 
@@ -96,7 +99,10 @@ export default function Assistant() {
         {/* Sidebar */}
         <aside className="w-80 flex flex-col gap-6 h-full overflow-hidden hidden lg:flex shrink-0">
           <button 
-            onClick={() => setMessage('')}
+            onClick={() => {
+              setMessage('');
+              actions.clearChat();
+            }}
             className="w-full flex items-center justify-center gap-3 bg-white p-5 rounded-[2rem] shadow-premium border border-outline hover:border-primary/20 transition-all group"
           >
             <PlusCircle className="text-primary w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />

@@ -1,8 +1,8 @@
 import type { ReactNode, Dispatch } from 'react';
-import { createContext, useContext, useReducer, useEffect } from 'react';
+import { createContext, useContext, useReducer, useEffect, useRef } from 'react';
 import {
   Place, TravelPlan, ExchangeRates, TavilySearchResult,
-  searchDestinations, generateTravelPlan, generateAIResponse,
+  searchDestinations, generateTravelPlan, generateAIResponse, adjustTravelPlanWithAI,
   tavilySearch as tavilySearchService, tavilyAnswer,
   convertCurrency as convertCurrencyService, getExchangeRates,
 } from './services';
@@ -63,6 +63,7 @@ type AppAction =
   | { type: 'SET_SEARCH_RESULTS'; payload: Place[] }
   | { type: 'SET_FILTERS'; payload: Partial<AppState['filters']> }
   | { type: 'ADD_CHAT_MESSAGE'; payload: ChatMessage }
+  | { type: 'SET_CHAT_MESSAGES'; payload: ChatMessage[] }
   | { type: 'SET_EXCHANGE_RATES'; payload: ExchangeRates }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null };
@@ -75,7 +76,7 @@ const initialState: AppState = {
   searchResults: [],
   filters: {
     budget: 50000,
-    category: '',
+    category: 'all',
     rating: 0,
     preferences: [],
   },
@@ -118,6 +119,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, filters: { ...state.filters, ...action.payload } };
     case 'ADD_CHAT_MESSAGE':
       return { ...state, chatMessages: [...state.chatMessages, action.payload] };
+    case 'SET_CHAT_MESSAGES':
+      return { ...state, chatMessages: action.payload };
     case 'SET_EXCHANGE_RATES':
       return { ...state, exchangeRates: action.payload };
     case 'SET_LOADING':
@@ -137,6 +140,7 @@ const AppContext = createContext<{
     login: (email: string, password: string) => Promise<boolean>;
     logout: () => void;
     signup: (email: string, password: string, name: string) => Promise<boolean>;
+    updateUser: (updates: Partial<User>) => void;
     searchDestinations: (location: string, preferences?: string[]) => Promise<void>;
     updateFilters: (filters: Partial<AppState['filters']>) => void;
     createTrip: (name: string, destination: string, startDate: string, endDate: string, budget: number) => Promise<Trip>;
@@ -144,18 +148,21 @@ const AppContext = createContext<{
     deleteTrip: (tripId: string) => void;
     savePlace: (place: Place) => void;
     removePlace: (placeId: string) => void;
-    generateAIPlan: (destination: string, duration: number, budget: number, preferences?: string[], options?: { context?: string }) => Promise<void>;
+    generateAIPlan: (destination: string, duration: number, budget?: number, preferences?: string[], options?: { context?: string; placesPerDay?: number }) => Promise<void>;
+    adjustTripPlan: (instruction: string) => Promise<string>;
     sendChatMessage: (message: string) => Promise<void>;
     convertCurrency: (amount: number, from: string, to: string) => Promise<{ convertedAmount: number; rate: number }>;
     loadExchangeRates: (baseCurrency?: string) => Promise<void>;
     searchWeb: (query: string) => Promise<TavilySearchResult[]>;
     clearError: () => void;
+    clearChat: () => void;
   };
 } | null>(null);
 
 // Provider
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const isInitialMount = useRef(true);
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -184,9 +191,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Save trips to localStorage whenever they change
   useEffect(() => {
-    if (state.trips.length > 0) {
-      localStorage.setItem('tripverse_trips', JSON.stringify(state.trips));
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
+    localStorage.setItem('tripverse_trips', JSON.stringify(state.trips));
   }, [state.trips]);
 
   const actions = {
@@ -214,6 +223,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
+    },
+
+    updateUser: (updates: Partial<User>) => {
+      const currentUser = state.user || {
+        id: 'user_' + Date.now(),
+        email: 'explorer@tripverse.app',
+        name: 'New Explorer',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
+      };
+      const updated = { ...currentUser, ...updates };
+      dispatch({ type: 'SET_USER', payload: updated });
+      localStorage.setItem('tripverse_user', JSON.stringify(updated));
     },
 
     logout: () => {
@@ -311,15 +332,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
 
     // AI planning
-    generateAIPlan: async (destination: string, duration: number, budget: number, preferences?: string[], options?: { context?: string }) => {
+    generateAIPlan: async (destination: string, duration: number, budget?: number, preferences?: string[], options?: { context?: string; placesPerDay?: number }) => {
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
         const plan = await generateTravelPlan({
           destination,
           duration,
-          budget,
+          budget: budget || 0,
+          placesPerDay: options?.placesPerDay,
           preferences,
-          customContext: options?.context,
+          options,
         });
         
         if (state.currentTrip) {
@@ -330,6 +352,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         dispatch({ type: 'SET_ERROR', payload: 'Failed to generate AI plan. Please try again.' });
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    },
+
+    // Dynamic AI Itinerary Adjustment & Rescheduling
+    adjustTripPlan: async (instruction: string): Promise<string> => {
+      if (!state.currentTrip?.plan) {
+        return 'No active itinerary to adjust. Please generate an itinerary first.';
+      }
+      dispatch({ type: 'SET_LOADING', payload: true });
+      try {
+        const { updatedPlan, message } = await adjustTravelPlanWithAI(state.currentTrip.plan, instruction);
+        dispatch({
+          type: 'UPDATE_TRIP',
+          payload: { id: state.currentTrip.id, updates: { plan: updatedPlan } },
+        });
+        return message;
+      } catch (error) {
+        return 'Could not adjust itinerary. Please try again.';
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
@@ -406,6 +448,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     clearError: () => {
       dispatch({ type: 'SET_ERROR', payload: null });
+    },
+
+    clearChat: () => {
+      dispatch({ type: 'SET_CHAT_MESSAGES', payload: [] });
     },
   };
 

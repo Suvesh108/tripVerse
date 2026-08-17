@@ -1,30 +1,47 @@
-# 🌍 TripVerse — AI-Powered Travel Planning & Discovery Platform (Client-Side BYOK)
+# 🌍 TripVerse — Next-Gen AI Travel Architect & Route Platform
 
-TripVerse is a modern, intelligent travel planning and discovery platform built with **React 19**, **TypeScript**, **Tailwind CSS v4**, and **Leaflet**.
+TripVerse is an intelligent, high-efficiency travel planning and interactive routing platform built with **React 19**, **TypeScript**, **Tailwind CSS v4**, and **Leaflet**.
 
-TripVerse runs completely on the frontend with a **Client-Side "Bring Your Own Key" (BYOK) Architecture**. Users can enter their own free API keys directly in the frontend settings, allowing unlimited personalized travel planning without server-side rate limits or shared quotas.
+TripVerse runs 100% on the frontend with a **Client-Side "Bring Your Own Key" (BYOK) Architecture**. Users can enter their own free API keys directly in the frontend settings, allowing personalized, unconstrained travel planning without intermediate servers, rate limits, or shared quotas.
 
 ---
 
-## 🔒 Local Privacy & Security Architecture
+## 🔒 Privacy & Security Architecture
 
 - 🛡️ **100% Client-Side Storage**: All API keys are saved exclusively in your browser's local `localStorage`.
-- 🚫 **Zero Backend Proxying / No Credential Sharing**: Keys are never transmitted to any intermediate server, backend database, or third party.
-- 🌐 **Direct Provider Communication**: Network requests go straight from your browser to official provider endpoints over secure HTTPS (`api.groq.com`, `api.tavily.com`, `v6.exchangerate-api.com`, `open.er-api.com`, `open-meteo.com`, `openstreetmap.org`, `wikipedia.org`).
-- ⚡ **Full User Control**: You can test, update, mask, or wipe your keys from browser storage at any time with a single click.
+- 🚫 **Zero Backend Proxying**: Keys are never transmitted to any server or third-party proxy.
+- 🌐 **Direct Provider Communication**: Network requests go straight from your browser to official HTTPS endpoints (`api.groq.com`, `api.tavily.com`, `v6.exchangerate-api.com`, `open-meteo.com`, `openstreetmap.org`, `wikipedia.org`).
+- ⚡ **Instant Key Controls**: Test, update, mask, or wipe your keys from browser storage at any time with a single click.
 
 ---
 
-## ✨ Features
+## ✨ Core Features
 
-- 🤖 **AI-Powered Trip Planner**: Generates personalized, day-by-day itineraries with estimated budgets, activities, hotels, and attractions.
-- 💬 **AI Travel Chat Assistant**: Real-time interactive travel concierge for customized suggestions, packing tips, and regional guides.
-- 🗺️ **Interactive Maps & Geolocation**: Map view powered by **Leaflet** & **OpenStreetMap** to discover attractions, accommodations, and dining.
-- 🔍 **Destination Explorer**: Browse curated destinations worldwide with summaries from Wikipedia and live weather from Open-Meteo.
-- 💱 **Live Currency Converter**: Real-time exchange rate calculations and pair conversions with built-in public rate fallbacks.
-- 🌤️ **Live Weather Forecasts**: Real-time temperatures and conditions for any destination.
-- 👤 **Trip Management & Travel Profile**: Save custom itineraries, manage saved places, and track travel stats locally.
-- 🔑 **Built-in API Settings Manager**: In-app UI modal to manage and test Groq, Tavily, and ExchangeRate API keys with instant connection feedback.
+### 1. 🤖 Chained $< 5\text{ km}$ Hop-by-Hop AI Itinerary Architect
+- **Tight Geographic Clustering**: Plans daily itineraries where consecutive stops are within a **$\le$ 5 km radius** of the previous spot ($\text{Stop 1} \xrightarrow{<5\text{km}} \text{Stop 2} \xrightarrow{<5\text{km}} \text{Stop 3}$) to eliminate transit fatigue.
+- **Zero Place Duplication**: Enforces 100% unique attractions, monuments, viewpoints, and dining across every day of the journey.
+- **Customizable Stops Per Day**: Toggle between `2`, `3`, or `4` stops per day with 1-click re-generation.
+- **Live Distance Badges**: Displays precise Haversine distance and proximity status between every waypoint.
+- **Circular Percentage Progress Meter**: Sleek frosted-glass SVG loader tracking real-time itinerary synthesis (`0%` $\rightarrow$ `100%`).
+
+### 2. 💬 Live AI Itinerary Adjuster & Concierge
+- Built-in chat inside the Planner to modify trips in real-time.
+- Tell the assistant if you only visited 1 place due to delays or weather—the AI will automatically reschedule remaining spots to subsequent days without dropping them.
+- Request nearby additions under 3–5 km, swap activities, or reduce daily pace dynamically.
+
+### 3. 🗺️ Full-Screen Routing Engine & Interactive Destinations Map
+- **Global Overview by Default**: Starts in a clean, zoomed-out world map showcasing global destinations and user planned trips.
+- **Day-by-Day Filter Tabs**: Switch between `All Days` or isolate `Day 1`, `Day 2`, `Day 3` to trace clustered daily polylines.
+- **1-Click Multi-Stop Map Export**: Launch your sequenced route directly in **Google Maps** or **Apple Maps** with turn-by-turn waypoints.
+- **Direct Itinerary Integration**: Any trip created in the Planner automatically synchronizes with the Destinations route map.
+
+### 4. 🧠 Natural Language AI Destination & Location Discovery
+- Search using thematic prompts (e.g. *"Peaceful hill stations with tea plantations in South India"*, *"Historic castles in Europe"*, *"Best coastal surfing spots in Portugal"*).
+- AI analyzes the prompt and returns matching destinations with coordinates, descriptions, and photo previews.
+
+### 5. 💱 Real-time Currency Converter & 🌤️ Live Weather
+- Instant multi-currency conversion with automatic public rate fallbacks.
+- Live weather forecasts powered by Open-Meteo.
 
 ---
 
@@ -36,16 +53,16 @@ TripVerse runs completely on the frontend with a **Client-Side "Bring Your Own K
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
 - **Animations**: [Motion](https://motion.dev/)
 - **Icons**: [Lucide React](https://lucide.dev/)
-- **Maps**: [Leaflet](https://leafletjs.com/) & [React-Leaflet](https://react-leaflet.js.org/)
+- **Maps & Routing**: [Leaflet](https://leafletjs.com/)
 - **Routing**: [React Router v7](https://reactrouter.com/)
 
 ### Direct Client Integrations & APIs
-- **AI Inference**: [Groq Cloud API](https://console.groq.com/) (`llama-3.3-70b-versatile`)
-- **Web Search**: [Tavily Search API](https://tavily.com/)
+- **AI Engine**: [Groq Cloud API](https://console.groq.com/) (`llama-3.3-70b-versatile` with JSON schema output)
+- **Live Web Enrichment**: [Tavily Search API](https://tavily.com/)
 - **Currency Data**: [ExchangeRate-API](https://www.exchangerate-api.com/) & [open.er-api.com](https://open.er-api.com/)
-- **Weather Data**: [Open-Meteo](https://open-meteo.com/) (No key required)
-- **Map & POI Data**: [OpenStreetMap](https://www.openstreetmap.org/) & [Overpass API](https://overpass-api.de/) (No key required)
-- **Place Descriptions**: [Wikipedia REST API](https://en.wikipedia.org/) (No key required)
+- **Live Weather**: [Open-Meteo](https://open-meteo.com/) *(No key required)*
+- **Geocoding & POIs**: [OpenStreetMap Nominatim](https://nominatim.openstreetmap.org/) & [Overpass API](https://overpass-api.de/) *(No key required)*
+- **Descriptions & Media**: [Wikipedia REST API](https://en.wikipedia.org/) *(No key required)*
 
 ---
 
@@ -56,28 +73,27 @@ tripVerse/
 ├── src/
 │   ├── components/
 │   │   ├── ApiSettingsModal.tsx # In-app UI for local API key management & testing
-│   │   ├── Navbar.tsx           # Global navigation with API key status trigger
+│   │   ├── Navbar.tsx           # Global navigation with active trip & key status
 │   │   └── Footer.tsx           # Global footer
 │   ├── lib/
 │   │   ├── apiKeyStorage.ts     # Safe client-side localStorage API key manager
-│   │   ├── services.ts          # Direct browser API client services & fallbacks
-│   │   ├── context.tsx          # React Context state management
-│   │   └── utils.ts             # Styling & utility helpers
+│   │   ├── services.ts          # AI planner, route calculators, API clients & fallbacks
+│   │   ├── context.tsx          # Application state & trip store
+│   │   └── utils.ts             # Tailwind class merging & styling helpers
 │   ├── pages/
-│   │   ├── Home.tsx             # Landing hero & featured destinations
-│   │   ├── Explore.tsx          # Dynamic destination explorer
-│   │   ├── Destinations.tsx     # Destination details & attraction maps
-│   │   ├── Planner.tsx          # AI trip & itinerary planner
-│   │   ├── Assistant.tsx        # AI travel chat assistant
-│   │   ├── Profile.tsx          # User profile & API security settings
-│   │   └── Login.tsx            # Guest / user session
-│   ├── App.tsx                  # Main router & layout
+│   │   ├── Home.tsx             # Hero search with live destination preview
+│   │   ├── Explore.tsx          # AI destination explorer & 1-click trip planner
+│   │   ├── Planner.tsx          # AI trip itinerary, <5km chaining & live AI chat
+│   │   ├── Destinations.tsx     # Full-screen routing engine & Google/Apple Maps export
+│   │   ├── Assistant.tsx        # Standalone AI travel concierge
+│   │   └── Profile.tsx          # Saved trips, places & API settings
+│   ├── App.tsx                  # Router & navigation configuration
 │   ├── main.tsx                 # React entry point
-│   └── index.css                # Global styling & Tailwind CSS imports
-├── .env.example                 # Optional environment template
+│   └── index.css                # Tailwind CSS v4 & custom design tokens
+├── vercel.json                  # Vercel SPA deployment rewrites
 ├── package.json                 # Project dependencies & scripts
 ├── tsconfig.json                # TypeScript configuration
-└── vite.config.ts               # Vite configuration
+└── vite.config.ts               # Vite build configuration
 ```
 
 ---
@@ -99,7 +115,7 @@ cd tripVerse
 npm install
 ```
 
-### 3. Start the Development Server
+### 3. Start Development Server
 ```bash
 npm run dev
 ```
@@ -114,9 +130,9 @@ You can configure your API keys in two ways:
 ### Option A: Directly in the Web UI (Recommended)
 1. Click the **"Set API Key"** / **"API Ready"** button in the top navigation bar (or visit **Profile** > **API Keys**).
 2. Enter your keys:
-   - **Groq AI Key** (Required for AI planning/chat): Get free key at [console.groq.com/keys](https://console.groq.com/keys)
-   - **Tavily Search Key** (Optional web enrichment): Get free key at [tavily.com](https://tavily.com/)
-   - **ExchangeRate Key** (Optional): Get free key at [exchangerate-api.com](https://www.exchangerate-api.com/)
+   - **Groq AI Key** *(Required for AI planning/chat)*: Get a free key at [console.groq.com/keys](https://console.groq.com/keys)
+   - **Tavily Search Key** *(Optional web search)*: Get a free key at [tavily.com](https://tavily.com/)
+   - **ExchangeRate Key** *(Optional)*: Get a free key at [exchangerate-api.com](https://www.exchangerate-api.com/)
 3. Click **Test** to verify connection.
 4. Click **Save Keys to Browser**.
 
@@ -130,11 +146,24 @@ VITE_EXCHANGERATE_API_KEY=your_exchange_key_here
 
 ---
 
+## ☁️ Deploying to Vercel
+
+TripVerse is 100% static & SPA ready:
+
+1. Push your code to your GitHub repository.
+2. Import the repository in [Vercel](https://vercel.com/).
+3. Framework Preset: **Vite**
+4. Build Command: `npm run build`
+5. Output Directory: `dist`
+6. Deploy! (`vercel.json` already handles all client-side SPA routing).
+
+---
+
 ## 📜 Available Scripts
 
 - `npm run dev` — Starts the Vite development server.
-- `npm run build` — Builds the production bundle in `dist/`.
-- `npm run preview` — Locally previews the production build.
+- `npm run build` — Builds the optimized production bundle in `dist/`.
+- `npm run preview` — Previews the production build locally.
 - `npm run lint` — Validates TypeScript types across the codebase.
 
 ---

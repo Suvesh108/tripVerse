@@ -2,12 +2,14 @@ import { Settings, Edit3, Globe, Bed, Plane, Utensils, ArrowRight, MapPin, Calen
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useState, useEffect } from 'react';
-import { useApp } from '../lib/context';
+import { useNavigate } from 'react-router-dom';
+import { useApp, Trip } from '../lib/context';
 import ApiSettingsModal from '../components/ApiSettingsModal';
 import { getStoredApiKeys } from '../lib/apiKeyStorage';
 
 export default function Profile() {
   const { state, actions } = useApp();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [apiKeysStatus, setApiKeysStatus] = useState({
@@ -38,9 +40,9 @@ export default function Profile() {
 
   const user = state.user || {
     id: 'guest',
-    email: 'new.explorer@tripverse.app',
-    name: 'New Explorer',
-    avatar: 'https://picsum.photos/seed/explorer/400/400',
+    email: 'explorer@tripverse.app',
+    name: 'Traveler',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400',
   };
 
   const userTrips = state.trips;
@@ -54,7 +56,12 @@ export default function Profile() {
   };
 
   const handleSaveProfile = async () => {
-    console.log('Saving profile:', editForm);
+    if (editForm.name.trim()) {
+      actions.updateUser({
+        name: editForm.name.trim(),
+        email: editForm.email.trim() || user.email,
+      });
+    }
     setIsEditing(false);
   };
 
@@ -65,19 +72,29 @@ export default function Profile() {
   };
 
   const handleCreateTrip = async () => {
-    const newTrip = await actions.createTrip(
+    await actions.createTrip(
       'New Adventure',
-      'Destination',
+      'Goa',
       new Date().toISOString().split('T')[0],
       new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       50000
     );
-    console.log('Created new trip:', newTrip);
+    navigate('/planner');
+  };
+
+  const handleOpenTrip = (trip: Trip) => {
+    actions.updateTrip(trip.id, trip);
+    navigate('/planner');
   };
 
   const travelStats = {
     trips: userTrips.length,
-    miles: userTrips.reduce((sum, trip) => sum + (trip.budget * 0.1), 0),
+    days: userTrips.reduce((sum, trip) => {
+      const start = new Date(trip.startDate).getTime();
+      const end = new Date(trip.endDate).getTime();
+      const diff = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)));
+      return sum + diff;
+    }, 0),
     saves: state.currentTrip?.savedPlaces.length || 0,
   };
 
@@ -92,7 +109,7 @@ export default function Profile() {
               <div className="relative z-10">
                 <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white mx-auto mb-4 md:mb-6 overflow-hidden shadow-xl">
                   <img 
-                    src={user.avatar || 'https://picsum.photos/seed/alex/400/400'} 
+                    src={user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400'} 
                     alt="Profile" 
                     className="w-full h-full object-cover" 
                     referrerPolicy="no-referrer"
@@ -154,8 +171,8 @@ export default function Profile() {
                     <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trips</p>
                   </div>
                   <div>
-                    <p className="text-xl md:text-2xl font-bold text-primary">{Math.round(travelStats.miles).toLocaleString()}k</p>
-                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Miles</p>
+                    <p className="text-xl md:text-2xl font-bold text-primary">{travelStats.days}</p>
+                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Days</p>
                   </div>
                   <div>
                     <p className="text-xl md:text-2xl font-bold text-primary">{travelStats.saves}</p>
@@ -223,12 +240,12 @@ export default function Profile() {
           {/* Main Content */}
           <section className="md:col-span-7 lg:col-span-8 space-y-10 md:space-y-12">
             <div>
-              <h2 className="font-headline text-2xl md:text-3xl font-bold mb-6 md:mb-8">Travel DNA</h2>
+              <h2 className="font-headline text-2xl md:text-3xl font-bold mb-6 md:mb-8">Travel Style & Preferences</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
                 {[
-                  { title: 'Luxury Stays', val: '85%', icon: Bed, color: 'bg-blue-50 text-blue-600' },
-                  { title: 'Local Dining', val: '92%', icon: Utensils, color: 'bg-cyan-50 text-cyan-600' },
-                  { title: 'Adventure', val: '64%', icon: Sparkles, color: 'bg-purple-50 text-purple-600' },
+                  { title: 'Nature & Trekking', val: '85%', icon: Sparkles, color: 'bg-emerald-50 text-emerald-600' },
+                  { title: 'Local Cuisine', val: '92%', icon: Utensils, color: 'bg-cyan-50 text-cyan-600' },
+                  { title: 'Cultural Heritage', val: '78%', icon: Globe, color: 'bg-blue-50 text-primary' },
                 ].map(dna => (
                   <div key={dna.title} className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-50">
                     <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center mb-4 md:mb-6", dna.color)}>
@@ -272,7 +289,7 @@ export default function Profile() {
                   {userTrips.map((trip) => (
                     <div key={trip.id} className="group relative h-72 md:h-80 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-lg">
                       <img 
-                        src={`https://picsum.photos/seed/${trip.destination}/800/600`} 
+                        src={`https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=80&w=800`} 
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                         referrerPolicy="no-referrer"
                       />
@@ -283,10 +300,17 @@ export default function Profile() {
                         </p>
                         <div className="flex gap-3">
                           <button 
+                            onClick={() => handleOpenTrip(trip)}
+                            className="px-4 py-2 bg-primary/90 backdrop-blur-md border border-white/20 rounded-full text-white text-[10px] font-bold hover:bg-primary transition-all flex items-center gap-1.5 shadow-md"
+                          >
+                            <Sparkles className="w-3 h-3 text-secondary" />
+                            Open in Planner
+                          </button>
+                          <button 
                             onClick={() => handleDeleteTrip(trip.id)}
                             className="w-fit px-4 py-2 bg-red-500/80 backdrop-blur-md border border-red-500/30 rounded-full text-white text-[10px] font-bold hover:bg-red-600 transition-all"
                           >
-                            Delete Trip
+                            Delete
                           </button>
                         </div>
                       </div>

@@ -28,15 +28,10 @@
 @layer base {
   body {
     @apply bg-background font-body text-on-surface antialiased selection:bg-secondary/20;
-    user-select: none;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline tracking-tight;
-  }
-
-  input, textarea, [contenteditable="true"], .selectable {
-    user-select: text !important;
   }
 }
 
