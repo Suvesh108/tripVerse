@@ -110,8 +110,8 @@ export default function Navbar() {
             </form>
           </div>
 
-          {/* API Key Status Pill */}
-          {!hasApiKey ? (
+          {/* Missing API Key Warning Pill (only when unset) */}
+          {!hasApiKey && (
             <button
               onClick={() => setIsApiModalOpen(true)}
               className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-700 hover:bg-amber-500/25 rounded-full text-xs font-bold transition-all animate-pulse cursor-pointer"
@@ -119,15 +119,6 @@ export default function Navbar() {
             >
               <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
               <span>Configure API</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => setIsApiModalOpen(true)}
-              className="hidden xl:flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full text-xs font-bold transition-all cursor-pointer"
-              title="API keys active"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-              <span>API Ready</span>
             </button>
           )}
 
