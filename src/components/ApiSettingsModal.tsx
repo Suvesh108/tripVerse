@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Key, ShieldCheck, Eye, EyeOff, CheckCircle2, AlertCircle, 
@@ -16,6 +17,7 @@ interface ApiSettingsModalProps {
 }
 
 export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [keys, setKeys] = useState<UserApiKeys>({
     groqApiKey: '',
     tavilyApiKey: '',
@@ -36,6 +38,10 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
   const [exchangeStatus, setExchangeStatus] = useState<{ success?: boolean; message?: string } | null>(null);
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -95,24 +101,26 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
     setTestingExchange(false);
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
           {/* Frosted Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-950/75 backdrop-blur-md"
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md"
           />
 
           {/* Centered Compact Modal Window */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 15 }}
+            initial={{ opacity: 0, scale: 0.92, y: 0 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 15 }}
+            exit={{ opacity: 0, scale: 0.92, y: 0 }}
             transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
             className="relative w-full max-w-lg bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-800 overflow-hidden z-10 my-auto"
           >
@@ -399,6 +407,7 @@ export default function ApiSettingsModal({ isOpen, onClose }: ApiSettingsModalPr
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
