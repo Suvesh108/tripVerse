@@ -16,7 +16,7 @@ export default function Assistant() {
   const [webResults, setWebResults] = useState<TavilySearchResult[]>([]);
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [hasGroqKey, setHasGroqKey] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const checkKey = () => {
     setHasGroqKey(Boolean(getGroqApiKey()));
@@ -51,12 +51,14 @@ export default function Assistant() {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [state.chatMessages]);
+  }, [state.chatMessages, isTyping]);
 
   const handleSendMessage = async () => {
     const userMessage = message.trim();
@@ -100,7 +102,7 @@ export default function Assistant() {
 
   return (
     <>
-      <main className="pt-24 h-[calc(100vh-1rem)] flex px-4 md:px-12 pb-4 md:pb-8 gap-8 max-w-screen-2xl mx-auto overflow-hidden bg-slate-50">
+      <main className="pt-24 h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] flex px-4 md:px-12 pb-4 md:pb-6 gap-8 max-w-screen-2xl mx-auto overflow-hidden bg-slate-50">
         {/* Sidebar */}
         <aside className="w-80 flex flex-col gap-6 h-full overflow-hidden hidden lg:flex shrink-0">
           <button 
@@ -206,7 +208,7 @@ export default function Assistant() {
           )}
 
           {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 no-scrollbar scroll-smooth">
             {state.chatMessages.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-center max-w-xl mx-auto space-y-8">
                 <div className="w-20 h-20 rounded-[2rem] bg-slate-50 flex items-center justify-center text-primary">
@@ -218,7 +220,7 @@ export default function Assistant() {
                     <button 
                       key={idx}
                       onClick={() => setMessage(idea.text)}
-                      className="p-5 bg-slate-50 rounded-3xl border border-transparent hover:border-primary/20 hover:bg-white transition-all text-left group"
+                      className="p-5 bg-slate-50 rounded-3xl border border-transparent hover:border-primary/20 hover:bg-white transition-all text-left group cursor-pointer"
                     >
                       <p className="text-xs font-black text-slate-400 uppercase mb-2 group-hover:text-primary transition-colors">{idea.title}</p>
                       <p className="text-sm font-bold text-slate-600 line-clamp-2">"{idea.text}"</p>
@@ -258,7 +260,7 @@ export default function Assistant() {
                     return (
                       <button
                         onClick={() => handlePlanFromChat(msg.content)}
-                        className="mt-6 flex items-center gap-2 px-6 py-3 bg-white text-primary rounded-full text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all border border-outline"
+                        className="mt-6 flex items-center gap-2 px-6 py-3 bg-white text-primary rounded-full text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all border border-outline cursor-pointer"
                       >
                         <Zap className="w-4 h-4 text-secondary fill-secondary" />
                         Plan {dest} Journey
@@ -281,7 +283,6 @@ export default function Assistant() {
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Input Form */}
