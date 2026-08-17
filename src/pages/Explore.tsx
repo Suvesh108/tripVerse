@@ -3,11 +3,13 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, SlidersHorizontal, MapPin, Sparkles, Star, 
-  ArrowRight, Globe, ChevronRight, X, Calendar, Wand2, Filter, RefreshCw
+  ArrowRight, Globe, ChevronRight, X, Calendar, Wand2, Filter, RefreshCw, Key
 } from 'lucide-react';
 import { useApp } from '../lib/context';
 import { Place } from '../lib/services';
 import { cn } from '../lib/utils';
+import { getGroqApiKey } from '../lib/apiKeyStorage';
+import ApiSettingsModal from '../components/ApiSettingsModal';
 
 const CURATED_DESTINATIONS: Place[] = [
   {
@@ -86,6 +88,7 @@ export default function Explore() {
   const [isLargeScreen, setIsLargeScreen] = useState(true);
   const [searchLocation, setSearchLocation] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
+  const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState({
     destinationType: [] as string[],
   });
@@ -109,6 +112,12 @@ export default function Explore() {
 
   // Direct 1-click plan generation from card
   const handlePlanForDestination = async (dest: Place) => {
+    const groqKey = getGroqApiKey();
+    if (!groqKey) {
+      setIsApiModalOpen(true);
+      return;
+    }
+
     const daysParam = searchParams.get('days');
     const daysCount = (daysParam && parseInt(daysParam) > 0) ? parseInt(daysParam) : 5;
     const today = new Date().toISOString().split('T')[0];
@@ -408,6 +417,11 @@ export default function Explore() {
           )}
         </section>
       </div>
+
+      <ApiSettingsModal
+        isOpen={isApiModalOpen}
+        onClose={() => setIsApiModalOpen(false)}
+      />
     </main>
   );
 }

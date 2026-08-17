@@ -64,6 +64,11 @@ export default function Assistant() {
       return;
     }
 
+    if (!hasGroqKey) {
+      setIsApiModalOpen(true);
+      return;
+    }
+
     setMessage('');
     setIsTyping(true);
 

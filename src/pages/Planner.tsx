@@ -2,7 +2,7 @@ import {
   ChevronRight, Wand2, Save, Plus, MapPin, Sparkles, Send, 
   Trash2, Map as MapIcon, LayoutList, Navigation, MessageSquare, 
   Bot, User, X, CheckCircle2, RefreshCw, ArrowRight, CornerDownLeft, Clock,
-  Compass, Hotel, Utensils, ShieldCheck, Sparkle, Globe2
+  Compass, Hotel, Utensils, ShieldCheck, Sparkle, Globe2, Key
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef, type KeyboardEvent } from 'react';
@@ -143,6 +143,17 @@ export default function Planner() {
   }, [chatMessages, isChatOpen]);
 
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [hasGroqKey, setHasGroqKey] = useState(true);
+
+  const checkGroqKey = () => {
+    setHasGroqKey(Boolean(getGroqApiKey()));
+  };
+
+  useEffect(() => {
+    checkGroqKey();
+    window.addEventListener('tripverse_keys_updated', checkGroqKey);
+    return () => window.removeEventListener('tripverse_keys_updated', checkGroqKey);
+  }, []);
 
   // --- Auto-plan logic ---
   useEffect(() => {
@@ -159,7 +170,7 @@ export default function Planner() {
   const triggerAIPlan = async (destination: string, days: number = 5, targetPlaces: number = placesPerDay) => {
     const groqKey = getGroqApiKey();
     if (!groqKey) {
-      setAutoPlanStatus('⚠️ Please configure your free Groq API key to generate AI itineraries.');
+      setAutoPlanStatus('⚠️ Please configure your free Groq API key in Settings to generate AI itineraries.');
       setIsApiModalOpen(true);
       return;
     }
@@ -317,6 +328,27 @@ export default function Planner() {
 
   return (
     <main className="pt-24 min-h-screen flex flex-col bg-slate-50 relative">
+      {/* Missing Groq Key Banner */}
+      {!hasGroqKey && (
+        <div className="mx-6 md:mx-12 mt-4 p-4 bg-amber-500/15 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-amber-900 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-500/20 text-amber-700 rounded-xl">
+              <Key className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs uppercase tracking-wider text-amber-800">No Groq API Key Configured</h4>
+              <p className="text-xs text-amber-700">Please configure your free Groq API key in Settings to generate AI itineraries & hop-by-hop routes.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setIsApiModalOpen(true)}
+            className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs font-black uppercase tracking-wider shadow-md transition-all whitespace-nowrap cursor-pointer"
+          >
+            Configure API Key
+          </button>
+        </div>
+      )}
+
       <header className="px-6 md:px-12 py-6 max-w-screen-2xl mx-auto w-full flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="space-y-1">
           <nav className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">

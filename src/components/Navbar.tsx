@@ -1,9 +1,11 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, User, Menu, X } from 'lucide-react';
+import { Search, User, Menu, X, Key, Sparkles, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useState, useEffect, type FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../lib/context';
+import { getGroqApiKey } from '../lib/apiKeyStorage';
+import ApiSettingsModal from './ApiSettingsModal';
 
 export default function Navbar() {
   const location = useLocation();
@@ -11,6 +13,18 @@ export default function Navbar() {
   const { actions } = useApp();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isApiModalOpen, setIsApiModalOpen] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(true);
+
+  const checkApiKey = () => {
+    setHasApiKey(Boolean(getGroqApiKey()));
+  };
+
+  useEffect(() => {
+    checkApiKey();
+    window.addEventListener('tripverse_keys_updated', checkApiKey);
+    return () => window.removeEventListener('tripverse_keys_updated', checkApiKey);
+  }, []);
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -96,11 +110,32 @@ export default function Navbar() {
             </form>
           </div>
 
+          {/* API Key Status Pill */}
+          {!hasApiKey ? (
+            <button
+              onClick={() => setIsApiModalOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-700 hover:bg-amber-500/25 rounded-full text-xs font-bold transition-all animate-pulse cursor-pointer"
+              title="API key missing - click to configure"
+            >
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span>Configure API</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsApiModalOpen(true)}
+              className="hidden xl:flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full text-xs font-bold transition-all cursor-pointer"
+              title="API keys active"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+              <span>API Ready</span>
+            </button>
+          )}
+
           {/* Profile Icon Button on the Right */}
           <button 
             onClick={handleProfileClick}
             className={cn(
-              "p-2.5 rounded-full transition-all hidden sm:flex items-center justify-center relative border",
+              "p-2.5 rounded-full transition-all hidden sm:flex items-center justify-center relative border cursor-pointer",
               location.pathname === '/profile'
                 ? "bg-primary text-white border-primary shadow-md"
                 : "text-slate-600 hover:text-primary hover:bg-slate-100 border-slate-200"
@@ -113,7 +148,7 @@ export default function Navbar() {
           
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors menu-button"
+            className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors menu-button cursor-pointer"
             aria-label="Toggle Menu"
           >
             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -146,6 +181,22 @@ export default function Navbar() {
               ))}
               
               <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
+                {!hasApiKey && (
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsApiModalOpen(true);
+                    }}
+                    className="w-full py-2.5 px-4 bg-amber-500/15 border border-amber-500/40 text-amber-800 rounded-xl text-xs font-bold flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600" />
+                      Configure Groq API Key
+                    </span>
+                    <span className="text-[10px] bg-amber-600 text-white px-2 py-0.5 rounded-full font-bold">Action Needed</span>
+                  </button>
+                )}
+                
                 <Link
                   to="/profile"
                   onClick={() => setIsMenuOpen(false)}
@@ -166,6 +217,11 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ApiSettingsModal
+        isOpen={isApiModalOpen}
+        onClose={() => setIsApiModalOpen(false)}
+      />
     </nav>
   );
 }
