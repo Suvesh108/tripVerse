@@ -144,7 +144,7 @@ const AppContext = createContext<{
     deleteTrip: (tripId: string) => void;
     savePlace: (place: Place) => void;
     removePlace: (placeId: string) => void;
-    generateAIPlan: (destination: string, duration: number, budget: number, preferences?: string[]) => Promise<void>;
+    generateAIPlan: (destination: string, duration: number, budget: number, preferences?: string[], options?: { context?: string }) => Promise<void>;
     sendChatMessage: (message: string) => Promise<void>;
     convertCurrency: (amount: number, from: string, to: string) => Promise<{ convertedAmount: number; rate: number }>;
     loadExchangeRates: (baseCurrency?: string) => Promise<void>;
@@ -311,7 +311,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
 
     // AI planning
-    generateAIPlan: async (destination: string, duration: number, budget: number, preferences?: string[]) => {
+    generateAIPlan: async (destination: string, duration: number, budget: number, preferences?: string[], options?: { context?: string }) => {
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
         const plan = await generateTravelPlan({
@@ -319,6 +319,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           duration,
           budget,
           preferences,
+          customContext: options?.context,
         });
         
         if (state.currentTrip) {

@@ -1,4 +1,6 @@
-// API service functions for external integrations
+// API service functions for external integrations (Client-Side Direct BYOK Architecture)
+
+import { getGroqApiKey, getTavilyApiKey, getExchangeRateApiKey } from './apiKeyStorage';
 
 // ============================================================
 // Types
@@ -68,13 +70,6 @@ export interface TavilySearchResult {
 }
 
 // ============================================================
-// API Key Helpers
-// ============================================================
-
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:3000/api';
-
-
-// ============================================================
 // 1. Overpass API — Places Search (OpenStreetMap)
 //    https://overpass-api.de/api/interpreter
 // ============================================================
@@ -97,58 +92,66 @@ export async function geocode(locationName: string): Promise<{ lat: number; lon:
   }
 }
 
-
 /**
- * Fetches detailed history and area insights using Groq AI
+ * Fetches detailed history and area insights using Groq AI (Direct Client Call)
  */
 export async function getDetailedInsights(location: string): Promise<{ history: string; areaInfo: string; highlights: { title: string; desc: string; icon: string }[] }> {
-  try {
-    const prompt = `Provide detailed insights for ${location}. 
-    1. History of the place (about 100 words).
-    2. About the area and its vibe (about 50 words).
-    3. Three key experience highlights with a short title, description, and a Lucide icon name (like Camera, Wine, Mountain, MapPin, etc.).
-    Format the response as JSON: { "history": "...", "areaInfo": "...", "highlights": [{ "title": "...", "desc": "...", "icon": "..." }] }`;
+  const groqApiKey = getGroqApiKey();
 
-    const response = await fetch(`${API_BASE_URL}/ai/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' }
-      }),
-    });
+  if (groqApiKey) {
+    try {
+      const prompt = `Provide detailed insights for ${location}. 
+      1. History of the place (about 100 words).
+      2. About the area and its vibe (about 50 words).
+      3. Three key experience highlights with a short title, description, and a Lucide icon name (like Camera, Wine, Mountain, MapPin, etc.).
+      Format the response as JSON: { "history": "...", "areaInfo": "...", "highlights": [{ "title": "...", "desc": "...", "icon": "..." }] }`;
 
-    if (!response.ok) throw new Error('AI insights failed');
-    const data = await response.json();
-    const content = JSON.parse(data.choices?.[0]?.message?.content || '{}');
-    
-    return {
-      history: content.history || 'History details coming soon...',
-      areaInfo: content.areaInfo || 'Discover the local charm of this area.',
-      highlights: content.highlights || [
-        { title: 'Local Landmarks', desc: 'Must-visit historical sites', icon: 'MapPin' },
-        { title: 'Hidden Gems', desc: 'Off-the-beaten-path experiences', icon: 'Sparkles' },
-        { title: 'Food & Culture', desc: 'Authentic local traditions', icon: 'Utensils' }
-      ]
-    };
-  } catch (error) {
-    console.error('Error fetching detailed insights:', error);
-    return {
-      history: 'Discover the rich historical tapestry of this destination, where ancient traditions meet modern life.',
-      areaInfo: 'This area is known for its vibrant community and stunning landscapes.',
-      highlights: [
-        { title: 'Iconic Sights', desc: 'Breathtaking views and landmarks', icon: 'Camera' },
-        { title: 'Cultural Heritage', desc: 'Rich history and local customs', icon: 'Globe' },
-        { title: 'Local Flavors', desc: 'A culinary journey like no other', icon: 'Utensils' }
-      ]
-    };
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' }
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const content = JSON.parse(data.choices?.[0]?.message?.content || '{}');
+        
+        return {
+          history: content.history || `Explore the storied past and cultural legacy of ${location}.`,
+          areaInfo: content.areaInfo || `Discover the vibrant atmosphere and unique charm of ${location}.`,
+          highlights: content.highlights || [
+            { title: 'Local Landmarks', desc: 'Must-visit historical sites', icon: 'MapPin' },
+            { title: 'Hidden Gems', desc: 'Off-the-beaten-path experiences', icon: 'Sparkles' },
+            { title: 'Food & Culture', desc: 'Authentic local traditions', icon: 'Utensils' }
+          ]
+        };
+      }
+    } catch (error) {
+      console.warn('Groq AI insights fetch failed, using fallback:', error);
+    }
   }
+
+  // Graceful fallback
+  return {
+    history: `Discover the rich historical tapestry of ${location}, where ancient traditions meet vibrant modern culture.`,
+    areaInfo: `${location} is known for its breathtaking sights, welcoming local culture, and memorable experiences.`,
+    highlights: [
+      { title: 'Iconic Sights', desc: 'Breathtaking views and landmarks', icon: 'Camera' },
+      { title: 'Cultural Heritage', desc: 'Rich history and local customs', icon: 'Globe' },
+      { title: 'Local Flavors', desc: 'A culinary journey like no other', icon: 'Utensils' }
+    ]
+  };
 }
 
 /**
  * Calculates an optimal visit path using a Greedy (Nearest Neighbor) approach
- * This serves as a practical implementation of the visiting order requirement.
  */
 export function calculateOptimalPath(places: Place[]): Place[] {
   if (places.length <= 1) return places;
@@ -156,7 +159,6 @@ export function calculateOptimalPath(places: Place[]): Place[] {
   const result: Place[] = [];
   const remaining = [...places];
   
-  // Start with the first place in the list
   let current = remaining.shift()!;
   result.push(current);
   
@@ -222,7 +224,6 @@ export async function getPlaces(location: string, category?: string): Promise<Pl
 
     const data = await response.json();
     
-    // Filter out duplicates by name
     const seenNames = new Set<string>();
     const uniquePlaces: any[] = [];
     
@@ -243,7 +244,7 @@ export async function getPlaces(location: string, category?: string): Promise<Pl
         address: element.tags?.['addr:full'] || `${element.tags?.name}, ${location}`,
       },
       category: element.tags?.tourism || element.tags?.historic || 'attraction',
-      rating: Number((Math.random() * 1.5 + 3.5).toFixed(1)), // Random rating between 3.5-5.0
+      rating: Number((Math.random() * 1.5 + 3.5).toFixed(1)),
       tags: Object.keys(element.tags || {}).filter(key => key.startsWith('tourism') || key.startsWith('historic') || key === 'wikidata'),
     }));
   } catch (error) {
@@ -308,21 +309,33 @@ export async function getWeather(lat: number, lon: number): Promise<WeatherData>
 }
 
 // ============================================================
-// 4. Groq API — AI Chat & Travel Planning
+// 4. Groq API — AI Chat & Travel Planning (Direct Browser API)
 //    https://api.groq.com/openai/v1/chat/completions
 // ============================================================
 
 export async function generateAIResponse(prompt: string, context?: any): Promise<string> {
+  const apiKey = getGroqApiKey();
+  
+  if (!apiKey) {
+    return `⚠️ **Groq API Key Not Configured**\n\nTo use the AI Travel Assistant and AI Travel Planner, please enter your free Groq API key in **API Settings** (Gear icon ⚙️ in top navigation or Profile).\n\n1. Visit [console.groq.com/keys](https://console.groq.com/keys)\n2. Generate a free API key\n3. Paste it into your TripVerse API Settings.\n\n*Your key is saved 100% locally in your browser and never shared with anyone.*`;
+  }
+
   try {
-    const systemPrompt = `You are a helpful travel planning assistant for TripVerse. 
+    const systemPrompt = `You are a helpful, expert travel planning assistant for TripVerse. 
     Provide detailed, practical travel advice and create comprehensive itineraries. 
     Be specific about locations, costs (in INR), and timing. 
     Format your responses in a clear, organized way.
-    If you are generating an itinerary, always use a clear 'Day X:' header followed by activities with '- Name: [Activity Name]', '- Type: [Type]', '- Duration: [Duration]', '- Cost: [Cost in INR]', and '- Description: [Description]'.`;
+    If you are generating an itinerary, always use a clear 'Day X:' header followed by activities with:
+    - Name: [Activity Name]
+    - Type: [Type]
+    - Duration: [Duration]
+    - Cost: [Cost in INR]
+    - Description: [Description]`;
 
-    const response = await fetch(`${API_BASE_URL}/ai/chat`, {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -332,39 +345,50 @@ export async function generateAIResponse(prompt: string, context?: any): Promise
           ...(context ? [{ role: 'system', content: `Additional context: ${JSON.stringify(context)}` }] : []),
           { role: 'user', content: prompt }
         ],
-        max_tokens: 2000,
+        max_tokens: 2048,
         temperature: 0.7,
-        response_format: { type: 'text' } // Using text but with strict formatting
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('Groq API error:', response.status, errorData);
-      return 'I apologize, but I encountered an error while processing your request. Please try again.';
+      if (response.status === 401) {
+        return '❌ **Invalid Groq API Key**: Please check your API key in API Settings (console.groq.com/keys).';
+      }
+      if (response.status === 429) {
+        return '⏳ **Rate Limit Exceeded**: Your Groq API key has reached its rate limit. Please wait a moment or use a different key in API Settings.';
+      }
+      return `Error from Groq AI (${response.status}): ${errorData.error?.message || 'Please try again.'}`;
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || 'I apologize, but I could not generate a response at this time.';
-  } catch (error) {
+    return data.choices?.[0]?.message?.content || 'I could not generate a response. Please try again.';
+  } catch (error: any) {
     console.error('Error generating AI response:', error);
-    return 'I apologize, but I\'m having trouble connecting to my AI services right now. Please try again later.';
+    return `⚠️ Connection error: ${error.message || 'Could not connect to Groq API. Please check your internet connection.'}`;
   }
 }
 
 // ============================================================
-// 5. Tavily API — Web Search for Travel Info
+// 5. Tavily API — Web Search for Travel Info (Direct Browser API)
 //    https://api.tavily.com/search
 // ============================================================
 
 export async function tavilySearch(query: string, maxResults: number = 5): Promise<TavilySearchResult[]> {
+  const apiKey = getTavilyApiKey();
+  if (!apiKey) {
+    return [];
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}/search`, {
+    const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        api_key: apiKey,
         query: `travel ${query}`,
         max_results: maxResults,
         search_depth: 'basic',
@@ -373,7 +397,7 @@ export async function tavilySearch(query: string, maxResults: number = 5): Promi
     });
 
     if (!response.ok) {
-      console.error('Tavily API error:', response.status);
+      console.warn('Tavily API responded with status:', response.status);
       return [];
     }
 
@@ -385,20 +409,24 @@ export async function tavilySearch(query: string, maxResults: number = 5): Promi
       score: r.score,
     }));
   } catch (error) {
-    console.error('Error with Tavily search:', error);
+    console.warn('Error with Tavily search:', error);
     return [];
   }
 }
 
 // Get a summarized answer from Tavily
 export async function tavilyAnswer(query: string): Promise<string> {
+  const apiKey = getTavilyApiKey();
+  if (!apiKey) return '';
+
   try {
-    const response = await fetch(`${API_BASE_URL}/search`, {
+    const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        api_key: apiKey,
         query: `travel ${query}`,
         max_results: 3,
         search_depth: 'basic',
@@ -411,35 +439,74 @@ export async function tavilyAnswer(query: string): Promise<string> {
     const data = await response.json();
     return data.answer || '';
   } catch (error) {
-    console.error('Error with Tavily answer:', error);
+    console.warn('Error with Tavily answer:', error);
     return '';
   }
 }
 
 // ============================================================
-// 6. ExchangeRate API — Currency Conversion
-//    https://v6.exchangerate-api.com/v6/{key}/latest/{base}
+// 6. ExchangeRate API — Currency Conversion (Direct Browser API with Open Fallback)
 // ============================================================
 
+const FALLBACK_EXCHANGE_RATES: Record<string, number> = {
+  USD: 1,
+  EUR: 0.92,
+  INR: 86.8,
+  GBP: 0.78,
+  JPY: 154.2,
+  AUD: 1.55,
+  CAD: 1.41,
+  CHF: 0.88,
+  AED: 3.67,
+  SGD: 1.34,
+  THB: 34.5,
+};
+
 export async function getExchangeRates(baseCurrency: string = 'USD'): Promise<ExchangeRates> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/exchange/latest/${baseCurrency}`);
+  const apiKey = getExchangeRateApiKey();
 
-    if (!response.ok) {
-      console.error('ExchangeRate API error:', response.status);
-      return { base: baseCurrency, rates: {}, lastUpdated: '' };
+  // 1. Try with user's ExchangeRate-API v6 key if configured
+  if (apiKey) {
+    try {
+      const response = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/latest/${baseCurrency}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.result === 'success') {
+          return {
+            base: data.base_code || baseCurrency,
+            rates: data.conversion_rates || {},
+            lastUpdated: data.time_last_update_utc || new Date().toISOString(),
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('ExchangeRate v6 key failed, trying open fallback:', e);
     }
-
-    const data = await response.json();
-    return {
-      base: data.base_code || baseCurrency,
-      rates: data.conversion_rates || {},
-      lastUpdated: data.time_last_update_utc || new Date().toISOString(),
-    };
-  } catch (error) {
-    console.error('Error fetching exchange rates:', error);
-    return { base: baseCurrency, rates: {}, lastUpdated: '' };
   }
+
+  // 2. Try free open endpoint (open.er-api.com - no key required)
+  try {
+    const response = await fetch(`https://open.er-api.com/v6/latest/${baseCurrency}`);
+    if (response.ok) {
+      const data = await response.json();
+      if (data.result === 'success') {
+        return {
+          base: data.base_code || baseCurrency,
+          rates: data.rates || {},
+          lastUpdated: data.time_last_update_utc || new Date().toISOString(),
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Open exchange rates API failed, using static fallback:', e);
+  }
+
+  // 3. Fallback to offline static estimates
+  return {
+    base: baseCurrency,
+    rates: FALLBACK_EXCHANGE_RATES,
+    lastUpdated: new Date().toISOString(),
+  };
 }
 
 export async function convertCurrency(
@@ -447,22 +514,43 @@ export async function convertCurrency(
   from: string = 'USD',
   to: string = 'EUR'
 ): Promise<{ convertedAmount: number; rate: number }> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/exchange/pair/${from}/${to}/${amount}`);
+  if (from === to) return { convertedAmount: amount, rate: 1 };
 
-    if (!response.ok) {
-      return { convertedAmount: amount, rate: 1 };
+  const apiKey = getExchangeRateApiKey();
+
+  // Try v6 pair conversion if key is available
+  if (apiKey) {
+    try {
+      const response = await fetch(`https://v6.exchangerate-api.com/v6/${apiKey}/pair/${from}/${to}/${amount}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.result === 'success') {
+          return {
+            convertedAmount: data.conversion_result || amount,
+            rate: data.conversion_rate || 1,
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Pair conversion failed, using rates fallback:', e);
     }
-
-    const data = await response.json();
-    return {
-      convertedAmount: data.conversion_result || amount,
-      rate: data.conversion_rate || 1,
-    };
-  } catch (error) {
-    console.error('Error converting currency:', error);
-    return { convertedAmount: amount, rate: 1 };
   }
+
+  // Fallback to latest rates calculation
+  try {
+    const ratesData = await getExchangeRates(from);
+    const targetRate = ratesData.rates[to];
+    if (targetRate) {
+      return {
+        convertedAmount: Number((amount * targetRate).toFixed(2)),
+        rate: targetRate,
+      };
+    }
+  } catch (e) {
+    console.warn('Currency conversion calculation failed:', e);
+  }
+
+  return { convertedAmount: amount, rate: 1 };
 }
 
 // ============================================================
@@ -526,10 +614,8 @@ export async function searchDestinations(params: {
   const { location, budget, preferences, category } = params;
   
   try {
-    // Get places from Overpass
     const places = await getPlaces(location, category);
     
-    // Enhance with Wikipedia descriptions and weather
     const enhancedPlaces = await Promise.all(
       places.map(async (place) => {
         const description = await getWikiInfo(place.name);
@@ -539,12 +625,11 @@ export async function searchDestinations(params: {
           ...place,
           description,
           weather,
-          price: Math.floor(Math.random() * 20000) + 5000, // Random price between 5000-25000 INR
+          price: Math.floor(Math.random() * 20000) + 5000,
         };
       })
     );
     
-    // Apply filters and scoring
     let filteredPlaces = enhancedPlaces;
     
     if (budget) {
@@ -562,7 +647,6 @@ export async function searchDestinations(params: {
       );
     }
     
-    // Apply recommendation scoring
     return filteredPlaces.map(place => ({
       ...place,
       score: calculateRecommendationScore(place, params),
@@ -584,7 +668,6 @@ export function calculateRecommendationScore(place: Place, params: {
 }): number {
   let score = 0;
   
-  // +5 if matches user preference
   if (params.preferences && params.preferences.length > 0) {
     const hasPreferenceMatch = params.preferences.some(pref =>
       place.tags.some(tag => tag.toLowerCase().includes(pref.toLowerCase())) ||
@@ -593,12 +676,10 @@ export function calculateRecommendationScore(place: Place, params: {
     if (hasPreferenceMatch) score += 5;
   }
   
-  // +5 if within budget
   if (params.budget && (!place.price || place.price <= params.budget)) {
     score += 5;
   }
   
-  // +3 if rating ≥ 4
   if (place.rating >= 4) {
     score += 3;
   }
@@ -615,30 +696,31 @@ export async function generateTravelPlan(input: {
   duration: number;
   budget: number;
   preferences?: string[];
+  customContext?: string;
 }): Promise<TravelPlan> {
-  const { destination, duration, budget, preferences } = input;
+  const { destination, duration, budget, preferences, customContext } = input;
   
-  // Enrich AI context with real web search data from Tavily
+  // Optional Tavily search enrichment
   let tavilyContext = '';
   try {
     const searchResults = await tavilySearch(`best things to do in ${destination} travel guide`, 3);
     if (searchResults.length > 0) {
-      tavilyContext = `\n\nHere is some recent travel information about ${destination}:\n` +
+      tavilyContext = `\n\nRecent travel highlights about ${destination}:\n` +
         searchResults.map(r => `- ${r.title}: ${r.content.slice(0, 200)}`).join('\n');
     }
   } catch (e) {
-    // Tavily enrichment is optional, continue without it
+    // Tavily enrichment is optional
   }
 
   const prompt = `Create a detailed ${duration}-day travel plan for ${destination} with a budget of ₹${budget}. 
   Include specific activities, restaurants, and attractions. 
-  ${preferences ? `Focus on these preferences: ${preferences.join(', ')}.` : ''}
+  ${preferences && preferences.length > 0 ? `Focus on these preferences: ${preferences.join(', ')}.` : ''}
+  ${customContext ? `\nAdditional Context:\n${customContext}` : ''}
   ${tavilyContext}
-  Format as a day-by-day itinerary with estimated costs for each activity.`;
+  Format as a day-by-day itinerary with estimated costs for each activity in INR.`;
   
   const aiResponse = await generateAIResponse(prompt);
   
-  // Parse AI response and create structured plan
   const days = parseAIResponseToDays(aiResponse, duration);
   
   return {
@@ -648,10 +730,10 @@ export async function generateTravelPlan(input: {
     itinerary: days,
     totalCost: days.reduce((sum, day) => sum + day.estimatedCost, 0),
     tips: [
-      'Book accommodations in advance for better rates',
-      'Consider local transportation passes',
-      'Check seasonal weather patterns',
-      'Make restaurant reservations for popular spots'
+      'Book accommodations and intercity transport in advance',
+      'Keep your digital itinerary handy offline',
+      'Check local seasonal weather before departure',
+      'Reserve tickets for popular attractions early'
     ],
   };
 }
@@ -660,14 +742,12 @@ function parseAIResponseToDays(response: string, duration: number): DayPlan[] {
   const days: DayPlan[] = [];
   const daySections = response.split(/Day\s*\d+\s*[:\-]/i);
   
-  // Skip the first section if it's preamble
   const actualDays = daySections.length > duration ? daySections.slice(1) : daySections;
 
   for (let i = 0; i < duration; i++) {
     const dayContent = actualDays[i] || '';
     const activities: Activity[] = [];
     
-    // Regex to find activity blocks
     const activityMatches = dayContent.split(/\-\s*Name\s*[:\-]/i).slice(1);
     
     activityMatches.forEach(block => {
@@ -681,16 +761,14 @@ function parseAIResponseToDays(response: string, duration: number): DayPlan[] {
         name: name || 'Sightseeing',
         type: typeMatch?.[1].trim().toLowerCase() || 'sightseeing',
         duration: durationMatch?.[1].trim() || '2 hours',
-        cost: parseInt(costMatch?.[1].replace(/,/g, '') || '0'),
+        cost: parseInt(costMatch?.[1].replace(/,/g, '') || '500'),
         description: descMatch?.[1].trim() || 'Enjoy the local atmosphere and scenery.',
         location: name || 'City Center',
-        // Mock coordinates for the planner map (in a real app, these would come from geocoding each activity)
         lat: 28.6139 + (Math.random() - 0.5) * 0.1,
         lon: 77.2090 + (Math.random() - 0.5) * 0.1,
       });
     });
 
-    // Fallback if no activities parsed
     if (activities.length === 0) {
       activities.push({
         name: 'Morning Exploration',
@@ -717,7 +795,7 @@ function parseAIResponseToDays(response: string, duration: number): DayPlan[] {
 // ============================================================
 
 const apiCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000;
 
 export function getCachedData(key: string): any | null {
   const cached = apiCache.get(key);

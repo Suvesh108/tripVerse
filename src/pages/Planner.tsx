@@ -1,10 +1,12 @@
-import { ChevronRight, Wand2, Save, Plus, GripVertical, Train, MapPin, Filter, ListFilter, Bookmark, Sparkles, Send, Star, Trash2, Edit3, Map as MapIcon, LayoutList, Navigation } from 'lucide-react';
+import { ChevronRight, Wand2, Save, Plus, GripVertical, Train, MapPin, Filter, ListFilter, Bookmark, Sparkles, Send, Star, Trash2, Edit3, Map as MapIcon, LayoutList, Navigation, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useApp } from '../lib/context';
-import { Place, Activity, LEAFLET_TILE_URL, LEAFLET_ATTRIBUTION, geocode } from '../lib/services';
+import { Place, Activity, LEAFLET_TILE_URL, LEAFLET_ATTRIBUTION, geocode, getPlaces } from '../lib/services';
 import { cn } from '../lib/utils';
+import ApiSettingsModal from '../components/ApiSettingsModal';
+import { getGroqApiKey } from '../lib/apiKeyStorage';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -26,6 +28,7 @@ export default function Planner() {
   const [isAutoPlanning, setIsAutoPlanning] = useState(false);
   const [autoPlanStatus, setAutoPlanStatus] = useState('');
   const [viewMode, setViewMode] = useState<'split' | 'map' | 'list'>('split');
+  const [isApiModalOpen, setIsApiModalOpen] = useState(false);
   
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
@@ -106,6 +109,13 @@ export default function Planner() {
   }, [currentTrip?.id]);
 
   const triggerAIPlan = async (destination: string, budget: number, days: number = 7) => {
+    const groqKey = getGroqApiKey();
+    if (!groqKey) {
+      setAutoPlanStatus('⚠️ Please configure your free Groq API key to generate AI itineraries.');
+      setIsApiModalOpen(true);
+      return;
+    }
+
     setIsAutoPlanning(true);
     setAutoPlanStatus(`🤖 AI is searching for Hotels, Restaurants, and Sights in ${destination}...`);
     try {
@@ -459,6 +469,11 @@ export default function Planner() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ApiSettingsModal
+        isOpen={isApiModalOpen}
+        onClose={() => setIsApiModalOpen(false)}
+      />
     </main>
   );
 }

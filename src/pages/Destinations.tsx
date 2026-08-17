@@ -1,9 +1,9 @@
-import { MapPin, Calendar, Thermometer, Wine, Camera, Mountain, ArrowRight, Star, ChevronRight, Wand2, Save, Navigation, DollarSign, RefreshCw, Info } from 'lucide-react';
+import { MapPin, Calendar, Thermometer, Wine, Camera, Mountain, ArrowRight, Star, ChevronRight, Wand2, Save, Navigation, DollarSign, RefreshCw, Info, Globe, Sparkles, Utensils } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../lib/context';
-import { getWeather, getWikiInfo, getPlaces, getDetailedInsights, calculateOptimalPath, Place, LEAFLET_TILE_URL, LEAFLET_ATTRIBUTION } from '../lib/services';
+import { getWeather, getWikiInfo, getPlaces, getDetailedInsights, calculateOptimalPath, Place, LEAFLET_TILE_URL, LEAFLET_ATTRIBUTION, geocode } from '../lib/services';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
