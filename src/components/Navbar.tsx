@@ -68,11 +68,9 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 w-full z-40 glass-panel border-none shadow-premium">
       <div className="flex justify-between items-center px-6 md:px-12 py-5 max-w-screen-2xl mx-auto font-headline">
-        <Link to="/" className="text-2xl md:text-3xl font-bold tracking-tighter text-gradient flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-white text-xs font-bold">TV</span>
-          </div>
-          TripVerse
+        <Link to="/" className="text-2xl md:text-3xl font-bold tracking-tighter text-gradient flex items-center gap-2.5 group">
+          <img src="/logo.svg" alt="TripVerse Logo" className="w-8 h-8 rounded-xl shadow-md group-hover:scale-105 transition-transform" />
+          <span>TripVerse</span>
         </Link>
         
         <div className="hidden md:flex items-center gap-10">

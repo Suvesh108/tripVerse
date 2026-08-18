@@ -7,10 +7,8 @@ export default function Footer() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-10 px-8 md:px-14 py-16 max-w-screen-2xl mx-auto font-headline text-sm">
         {/* Project info */}
         <div className="space-y-4 md:col-span-1">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-white text-xs font-bold">TV</span>
-            </div>
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.svg" alt="TripVerse Logo" className="w-8 h-8 rounded-xl shadow-md" />
             <span className="text-2xl font-bold tracking-tight">TripVerse</span>
           </div>
           <p className="text-slate-400 text-xs leading-relaxed">
